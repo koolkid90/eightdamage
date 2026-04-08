@@ -38,7 +38,7 @@ Copy the library code into a file named eightdamage.js
 
 
 // 1. Load the library
---------------------------------------------------------------
+
 // Browser: window.EightDamage
 // Node.js: const EightDamage = require('./eightdamage.js')
 -----------------------------------------------------------
@@ -56,15 +56,13 @@ console.log(restoredText); // "Hello World!"
 -------------------------------------------------------------------------
 🔧 API Methods
 1. compressQuad(data) — Basic compression (4x)
-javascript
--------------------------------------------------------------------------
+
 const data = "Hello World!";
 const compressed = EightDamage.compressQuad(data);
 // compressed: Uint8Array, 4x smaller than original
 ------------------------------------------------------------------------
 2. decompressQuad(compressed, originalSize) — Decompress
 
---------------------------------------------------------------------
 const restored = EightDamage.decompressQuad(compressed, data.length);
 const text = new TextDecoder().decode(restored);
 --------------------------------------------------------------------
@@ -102,8 +100,9 @@ const base64 = EightDamage.toBase64(compressed);
 const bytes = EightDamage.fromBase64(base64);
 --------------------------------------------------------------
 💡 Usage Examples
+----------------------------------------------------------
 Example 1: Compress text for network transmission
-javascript
+
 
 const message = "Hello world!";
 const compressed = EightDamage.compressQuad(message);
