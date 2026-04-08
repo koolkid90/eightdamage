@@ -105,7 +105,6 @@ const bytes = EightDamage.fromBase64(base64);
 Example 1: Compress text for network transmission
 javascript
 
-------------------------------------------------------------
 const message = "Hello world!";
 const compressed = EightDamage.compressQuad(message);
 const base64 = EightDamage.toBase64(compressed);
