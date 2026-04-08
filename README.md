@@ -21,9 +21,13 @@ Result: Guaranteed 4x compression on ANY data. Up to 500x+ on repetitive pattern
 ```bash
 npm install eightdamage
 
+-------------------------------------------------------------------------------------------
+
 Or include directly in browser
 
 <script src="eightdamage.js"></script>
+
+-----------------------------------------------------------------------------------------
 
 Basic Usage
 
