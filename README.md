@@ -1,6 +1,9 @@
 # eightdamage
-QUAD (4x) + RLE (2x) = 8x compression · Guaranteed 4x on any data
+
 ![algo](./eight-demo.png)
+
+QUAD (4x) + RLE (2x) = 8x compression · Guaranteed 4x on any data
+
 What is EIGHTDAMAGE?
 
 EIGHTDAMAGE is a lightweight, lossless compression algorithm that works in two stages:
