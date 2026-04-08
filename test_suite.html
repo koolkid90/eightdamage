@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>EIGHTDAMAGE · Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0a0a;
+            font-family: 'Courier New', monospace;
+            padding: 30px 20px;
+            color: #c0c0c0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+        .sub {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: #0f0f0f;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        h2 {
+            color: #00ff88;
+            margin-bottom: 20px;
+            border-left: 3px solid #00ff88;
+            padding-left: 12px;
+        }
+        .flex {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 15px 0;
+        }
+        button {
+            background: #1a1a1a;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+            border-radius: 6px;
+        }
+        button:hover {
+            background: #00ff88;
+            color: #0a0a0a;
+        }
+        textarea, input {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            color: #00ff88;
+            font-family: monospace;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+        }
+        .output-box {
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .test-result {
+            border-left: 3px solid #00ff88;
+            padding: 12px;
+            margin: 10px 0;
+            background: #0f0f0f;
+        }
+        .pass { color: #00ff88; }
+        .fail { color: #ff4444; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #00ff88; }
+        .badge {
+            display: inline-block;
+            background: #00ff8820;
+            border: 1px solid #00ff88;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+        hr { border-color: #2a2a2a; margin: 15px 0; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        td, th {
+            border: 1px solid #2a2a2a;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            color: #00ff88;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #00ff88;
+            transition: width 0.3s;
+        }
+        .library-badge {
+            background: #00ff8820;
+            border: 1px solid #00ff88;
+            padding: 8px 16px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>EIGHTDAMAGE · TEST SUITE</h1>
+    <div class="sub">Lossless compression · QUAD (4x guaranteed) + RLE (up to 500x)</div>
+
+    <!-- Library Status Section -->
+    <div class="section">
+        <h2>LIBRARY CONNECTION</h2>
+        <div id="libraryStatus">
+            <div class="output-box">
+                <span class="badge">INFO</span> Loading EIGHTDAMAGE library...
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Tests Section -->
+    <div class="section">
+        <h2>QUICK TESTS</h2>
+        <div class="flex">
+            <button id="testRandomBtn">RANDOM DATA</button>
+            <button id="testRepeatBtn">REPETITIVE</button>
+            <button id="testTextBtn">TEXT</button>
+            <button id="testJsonBtn">JSON</button>
+            <button id="testBinaryBtn">BINARY</button>
+            <button id="testAllBtn">RUN ALL TESTS</button>
+        </div>
+        <div id="quickResults"></div>
+    </div>
+
+    <!-- Custom Test Section -->
+    <div class="section">
+        <h2>CUSTOM TEST</h2>
+        <textarea id="customInput" rows="4" placeholder="Enter any text to test compression..."></textarea>
+        <div class="flex">
+            <button id="testCustomBtn">TEST CUSTOM DATA</button>
+            <button id="clearCustomBtn">CLEAR</button>
+        </div>
+        <div id="customResult"></div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="section">
+        <h2>STATISTICS</h2>
+        <div id="statsPanel">
+            <div class="output-box">
+                <span class="badge">INFO</span> Run tests to see statistics here
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== EIGHTDAMAGE LIBRARY (Embedded) ==========
+    (function(global) {
+        'use strict';
+
+        function quadPack(bytes) {
+            const packed = new Uint8Array(Math.ceil(bytes.length / 4));
+            for (let i = 0; i < bytes.length; i++) {
+                const quadIdx = Math.floor(i / 4);
+                const shift = (i % 4) * 2;
+                packed[quadIdx] |= ((bytes[i] >> 6) & 3) << shift;
+            }
+            return packed;
+        }
+
+        function quadUnpack(packed, originalLength) {
+            const bytes = new Uint8Array(originalLength);
+            for (let i = 0; i < originalLength; i++) {
+                const quadIdx = Math.floor(i / 4);
+                const shift = (i % 4) * 2;
+                bytes[i] = ((packed[quadIdx] >> shift) & 3) << 6;
+            }
+            return bytes;
+        }
+
+        function rlePack(bytes) {
+            const result = [];
+            let count = 1;
+            for (let i = 0; i < bytes.length; i++) {
+                if (bytes[i] === bytes[i + 1]) {
+                    count++;
+                } else {
+                    while (count > 255) {
+                        result.push(255, bytes[i]);
+                        count -= 255;
+                    }
+                    result.push(count, bytes[i]);
+                    count = 1;
+                }
+            }
+            return new Uint8Array(result);
+        }
+
+        function rleUnpack(packed) {
+            const result = [];
+            for (let i = 0; i < packed.length; i += 2) {
+                for (let j = 0; j < packed[i]; j++) {
+                    result.push(packed[i + 1]);
+                }
+            }
+            return new Uint8Array(result);
+        }
+
+        function compressQuad(data) {
+            const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+            return quadPack(bytes);
+        }
+
+        function decompressQuad(compressed, originalSize) {
+            return quadUnpack(compressed, originalSize);
+        }
+
+        function compressQuadRLE(data) {
+            const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+            const quadPacked = quadPack(bytes);
+            return rlePack(quadPacked);
+        }
+
+        function decompressQuadRLE(compressed, originalSize) {
+            const rleUnpacked = rleUnpack(compressed);
+            return quadUnpack(rleUnpacked, originalSize);
+        }
+
+        function compressSmart(data) {
+            const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+            const quadResult = compressQuad(bytes);
+            const quadRleResult = compressQuadRLE(bytes);
+            const quadRatio = bytes.length / quadResult.length;
+            const rleRatio = bytes.length / quadRleResult.length;
+            
+            if (rleRatio > quadRatio * 1.1) {
+                return {
+                    method: 'QUAD+RLE',
+                    compressed: quadRleResult,
+                    ratio: rleRatio,
+                    originalSize: bytes.length,
+                    compressedSize: quadRleResult.length
+                };
+            } else {
+                return {
+                    method: 'QUAD',
+                    compressed: quadResult,
+                    ratio: quadRatio,
+                    originalSize: bytes.length,
+                    compressedSize: quadResult.length
+                };
+            }
+        }
+
+        function getStats(data) {
+            const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+            const quadResult = compressQuad(bytes);
+            const quadRleResult = compressQuadRLE(bytes);
+            
+            return {
+                original: {
+                    bytes: bytes.length,
+                    bits: bytes.length * 8
+                },
+                quad: {
+                    bytes: quadResult.length,
+                    ratio: (bytes.length / quadResult.length).toFixed(2),
+                    savings: ((1 - quadResult.length / bytes.length) * 100).toFixed(1) + '%'
+                },
+                quadRle: {
+                    bytes: quadRleResult.length,
+                    ratio: (bytes.length / quadRleResult.length).toFixed(2),
+                    savings: ((1 - quadRleResult.length / bytes.length) * 100).toFixed(1) + '%'
+                },
+                bestMethod: quadRleResult.length < quadResult.length ? 'QUAD+RLE' : 'QUAD'
+            };
+        }
+
+        global.EightDamage = {
+            compressQuad: compressQuad,
+            decompressQuad: decompressQuad,
+            compressQuadRLE: compressQuadRLE,
+            decompressQuadRLE: decompressQuadRLE,
+            compressSmart: compressSmart,
+            getStats: getStats,
+            version: '1.0.0',
+            name: 'EIGHTDAMAGE'
+        };
+    })(window);
+
+    // ========== TEST FUNCTIONS ==========
+    
+    function updateLibraryStatus() {
+        var statusDiv = document.getElementById('libraryStatus');
+        if (window.EightDamage) {
+            statusDiv.innerHTML = '<div class="output-box"><span class="badge">OK</span> <strong>EIGHTDAMAGE v' + EightDamage.version + '</strong> loaded successfully<br><span style="font-size: 12px; color: #888;">Methods available: compressQuad, compressQuadRLE, compressSmart, getStats</span></div>';
+        } else {
+            statusDiv.innerHTML = '<div class="output-box"><span class="badge">ERROR</span> Failed to load EIGHTDAMAGE library</div>';
+        }
+    }
+
+    function runTest(name, data) {
+        var EightDamage = window.EightDamage;
+        var originalSize = typeof data === 'string' ? new TextEncoder().encode(data).length : data.length;
+        
+        var quadCompressed = EightDamage.compressQuad(data);
+        var quadDecompressed = EightDamage.decompressQuad(quadCompressed, originalSize);
+        var quadRestored = new TextDecoder().decode(quadDecompressed);
+        var quadValid = (typeof data === 'string' ? data : new TextDecoder().decode(data)) === quadRestored;
+        var quadRatio = originalSize / quadCompressed.length;
+        
+        var rleCompressed = EightDamage.compressQuadRLE(data);
+        var rleDecompressed = EightDamage.decompressQuadRLE(rleCompressed, originalSize);
+        var rleRestored = new TextDecoder().decode(rleDecompressed);
+        var rleValid = (typeof data === 'string' ? data : new TextDecoder().decode(data)) === rleRestored;
+        var rleRatio = originalSize / rleCompressed.length;
+        
+        var smart = EightDamage.compressSmart(data);
+        
+        return {
+            name: name,
+            originalSize: originalSize,
+            quad: { size: quadCompressed.length, ratio: quadRatio, valid: quadValid },
+            rle: { size: rleCompressed.length, ratio: rleRatio, valid: rleValid },
+            smart: { method: smart.method, ratio: smart.ratio },
+            passed: quadValid && rleValid
+        };
+    }
+
+    function renderTestResult(result) {
+        var quadClass = result.quad.ratio >= 3.5 ? 'pass' : '';
+        var rleClass = result.rle.ratio > result.quad.ratio ? 'pass' : '';
+        
+        return '<div class="test-result">' +
+            '<strong>' + result.name + '</strong>' +
+            '<div style="display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap;">' +
+            '<div>Original: ' + result.originalSize.toLocaleString() + ' bytes</div>' +
+            '<div>QUAD: ' + result.quad.size.toLocaleString() + ' bytes <span class="' + quadClass + '">(' + result.quad.ratio.toFixed(2) + 'x)</span> ' + (result.quad.valid ? 'OK' : 'FAIL') + '</div>' +
+            '<div>QUAD+RLE: ' + result.rle.size.toLocaleString() + ' bytes <span class="' + rleClass + '">(' + result.rle.ratio.toFixed(2) + 'x)</span> ' + (result.rle.valid ? 'OK' : 'FAIL') + '</div>' +
+            '<div>Smart: ' + result.smart.method + ' (' + result.smart.ratio.toFixed(2) + 'x)</div>' +
+            '</div>' +
+            '<div class="progress-bar"><div class="progress-fill" style="width: ' + Math.min(100, (result.originalSize - result.rle.size) / result.originalSize * 100) + '%"></div></div>' +
+            '</div>';
+    }
+
+    function generateRandomData(size) {
+        size = size || 5000;
+        var str = '';
+        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (var i = 0; i < size; i++) {
+            str += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return str;
+    }
+
+    function generateRepetitiveData(size) {
+        size = size || 5000;
+        var repeated = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+        return repeated.repeat(Math.ceil(size / repeated.length)).substring(0, size);
+    }
+
+    function generateTextData(size) {
+        size = size || 5000;
+        var lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. ";
+        return lorem.repeat(Math.ceil(size / lorem.length)).substring(0, size);
+    }
+
+    function generateJsonData() {
+        var obj = { 
+            name: "EIGHTDAMAGE", 
+            version: "1.0.0", 
+            features: ["QUAD", "RLE", "Lossless", "Fast"],
+            data: new Array(100).fill({ x: 1, y: 2, z: 3 })
+        };
+        return JSON.stringify(obj).repeat(20);
+    }
+
+    function generateBinaryLikeData(size) {
+        size = size || 5000;
+        var result = '';
+        for (var i = 0; i < size; i++) {
+            result += String.fromCharCode(Math.floor(Math.random() * 256));
+        }
+        return result;
+    }
+
+    function updateStatsPanel(results) {
+        var totalOriginal = 0;
+        var totalQuad = 0;
+        var totalRle = 0;
+        
+        for (var i = 0; i < results.length; i++) {
+            totalOriginal += results[i].originalSize;
+            totalQuad += results[i].quad.size;
+            totalRle += results[i].rle.size;
+        }
+        
+        var avgQuadRatio = totalOriginal / totalQuad;
+        var avgRleRatio = totalOriginal / totalRle;
+        
+        var statsHtml = '<div class="output-box">' +
+            '<span class="badge">STATS</span> Overall Statistics (' + results.length + ' tests)' +
+            '<hr>' +
+            '<table>' +
+            '<tr><th>Metric</th><th>QUAD</th><th>QUAD+RLE</th></tr>' +
+            '<tr><td>Total size</td><td>' + totalQuad.toLocaleString() + ' bytes</td><td>' + totalRle.toLocaleString() + ' bytes</td></tr>' +
+            '<tr><td>Average ratio</td><td class="pass">' + avgQuadRatio.toFixed(2) + 'x</td><td>' + avgRleRatio.toFixed(2) + 'x</td></tr>' +
+            '<tr><td>Space saved</td><td>' + ((1 - totalQuad/totalOriginal)*100).toFixed(1) + '%</td><td>' + ((1 - totalRle/totalOriginal)*100).toFixed(1) + '%</td></tr>' +
+            '</table>' +
+            '<div class="progress-bar" style="margin-top: 10px;"><div class="progress-fill" style="width: ' + (1 - totalRle/totalOriginal)*100 + '%; background: #00ff88;"></div></div>' +
+            '<div class="small" style="margin-top: 10px;">Average compression: ' + avgRleRatio.toFixed(2) + 'x</div>' +
+            '</div>';
+        
+        document.getElementById('statsPanel').innerHTML = statsHtml;
+    }
+
+    function runAllTests() {
+        var container = document.getElementById('quickResults');
+        container.innerHTML = '<div class="output-box">Running tests...</div>';
+        
+        var results = [];
+        
+        results.push(runTest('Random Data', generateRandomData(5000)));
+        results.push(runTest('Repetitive Data', generateRepetitiveData(5000)));
+        results.push(runTest('Text Data', generateTextData(5000)));
+        results.push(runTest('JSON Data', generateJsonData()));
+        results.push(runTest('Binary-like Data', generateBinaryLikeData(5000)));
+        
+        var html = '';
+        for (var i = 0; i < results.length; i++) {
+            html += renderTestResult(results[i]);
+        }
+        
+        container.innerHTML = html;
+        updateStatsPanel(results);
+    }
+
+    function testCustom() {
+        var input = document.getElementById('customInput').value;
+        if (!input) {
+            alert('Enter some text to test!');
+            return;
+        }
+        
+        var result = runTest('Custom Data', input);
+        document.getElementById('customResult').innerHTML = renderTestResult(result);
+        updateStatsPanel([result]);
+    }
+
+    function clearCustom() {
+        document.getElementById('customInput').value = '';
+        document.getElementById('customResult').innerHTML = '';
+    }
+
+    function testRandom() {
+        var data = generateRandomData(5000);
+        var result = runTest('Random Data', data);
+        document.getElementById('quickResults').innerHTML = renderTestResult(result);
+        updateStatsPanel([result]);
+    }
+    
+    function testRepeat() {
+        var data = generateRepetitiveData(5000);
+        var result = runTest('Repetitive Data', data);
+        document.getElementById('quickResults').innerHTML = renderTestResult(result);
+        updateStatsPanel([result]);
+    }
+    
+    function testText() {
+        var data = generateTextData(5000);
+        var result = runTest('Text Data', data);
+        document.getElementById('quickResults').innerHTML = renderTestResult(result);
+        updateStatsPanel([result]);
+    }
+    
+    function testJson() {
+        var data = generateJsonData();
+        var result = runTest('JSON Data', data);
+        document.getElementById('quickResults').innerHTML = renderTestResult(result);
+        updateStatsPanel([result]);
+    }
+    
+    function testBinary() {
+        var data = generateBinaryLikeData(5000);
+        var result = runTest('Binary-like Data', data);
+        document.getElementById('quickResults').innerHTML = renderTestResult(result);
+        updateStatsPanel([result]);
+    }
+
+    // ========== INIT ==========
+    document.getElementById('testRandomBtn').onclick = testRandom;
+    document.getElementById('testRepeatBtn').onclick = testRepeat;
+    document.getElementById('testTextBtn').onclick = testText;
+    document.getElementById('testJsonBtn').onclick = testJson;
+    document.getElementById('testBinaryBtn').onclick = testBinary;
+    document.getElementById('testAllBtn').onclick = runAllTests;
+    document.getElementById('testCustomBtn').onclick = testCustom;
+    document.getElementById('clearCustomBtn').onclick = clearCustom;
+    
+    document.getElementById('customInput').value = 'Hello EIGHTDAMAGE! This is a test message. AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    
+    setTimeout(function() {
+        updateLibraryStatus();
+        runAllTests();
+    }, 100);
+    
+    console.log('EIGHTDAMAGE Test Suite Ready');
+</script>
+</body>
+</html>
