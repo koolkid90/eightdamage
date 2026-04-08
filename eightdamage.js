@@ -2,7 +2,7 @@
  * EIGHTDAMAGE - Lossless compression library
  * QUAD (4x guaranteed) + RLE (optional)
  * 
- * @author Petrovich
+ * 
  * @license MIT
  * @version 1.0.0
  */
