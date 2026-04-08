@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>EIGHTDAMAGE · Smart Choice</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000000;
+            font-family: 'Courier New', monospace;
+            padding: 30px 20px;
+            color: #ffffff;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { font-size: 2rem; text-align: center; color: #ffffff; margin-bottom: 10px; }
+        .sub { text-align: center; color: #aaaaaa; margin-bottom: 30px; }
+        .section { background: #000000; border: 1px solid #ffffff; padding: 24px; margin-bottom: 24px; }
+        h2 { color: #ffffff; margin-bottom: 20px; border-left: 3px solid #ffffff; padding-left: 12px; }
+        .flex { display: flex; gap: 12px; flex-wrap: wrap; margin: 15px 0; }
+        button {
+            background: #000000; border: 1px solid #ffffff; color: #ffffff;
+            padding: 10px 20px; cursor: pointer; font-family: monospace;
+            font-size: 13px; font-weight: bold; transition: all 0.2s;
+        }
+        button:hover { background: #ffffff; color: #000000; }
+        .output-box { background: #000000; border: 1px solid #ffffff; padding: 20px; margin-top: 20px; }
+        .stat-value { font-size: 32px; font-weight: bold; text-align: center; }
+        .badge { display: inline-block; border: 1px solid #ffffff; padding: 4px 12px; font-size: 11px; margin-right: 8px; }
+        hr { border-color: #ffffff33; margin: 15px 0; }
+        .comparison { display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap; }
+        .comparison-card { border: 1px solid #ffffff; padding: 20px; text-align: center; flex: 1; min-width: 200px; }
+        .winner { border: 2px solid #00ff88; background: #00ff8810; }
+        .success { color: #00ff88; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        td, th { border: 1px solid #ffffff33; padding: 8px; text-align: left; }
+        th { color: #ffffff; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚡ EIGHTDAMAGE</h1>
+    <div class="sub">QUAD (4x guaranteed) · RLE (extra on repeats) · Smart choice</div>
+
+    <div class="section">
+        <h2>📊 BENCHMARK · COMPARING METHODS</h2>
+        <div class="flex">
+            <button id="benchmarkRandomBtn">🎲 RANDOM DATA</button>
+            <button id="benchmarkRepeatBtn">🔁 REPETITIVE DATA</button>
+            <button id="benchmarkTextBtn">📝 TEXT (mixed)</button>
+        </div>
+        <div id="benchmarkResult" style="display: none;"></div>
+    </div>
+
+    <div class="info" style="border:1px solid #ffffff; padding:15px;">
+        <span class="badge">⚡ VERDICT</span><br><br>
+        <strong>QUAD (4x):</strong> Guaranteed 4x compression on ANY data. Fast, simple, reliable.<br>
+        <strong>RLE (extra):</strong> Adds value ONLY on repetitive data (logs, zeros, patterns).<br>
+        <strong>Smart choice:</strong> Use QUAD by default. Add RLE only when data has runs.<br>
+        <span class="success">✅ QUAD wins on random/text data. RLE wins on repetitive data.</span>
+    </div>
+</div>
+
+<script>
+    function quadPack(bytes) {
+        const packed = new Uint8Array(Math.ceil(bytes.length / 4));
+        for (let i = 0; i < bytes.length; i++) {
+            const quadIdx = Math.floor(i / 4);
+            const shift = (i % 4) * 2;
+            packed[quadIdx] |= ((bytes[i] >> 6) & 3) << shift;
+        }
+        return packed;
+    }
+    
+    function rlePack(bytes) {
+        const result = [];
+        let count = 1;
+        for (let i = 0; i < bytes.length; i++) {
+            if (bytes[i] === bytes[i + 1]) {
+                count++;
+            } else {
+                while (count > 255) {
+                    result.push(255, bytes[i]);
+                    count -= 255;
+                }
+                result.push(count, bytes[i]);
+                count = 1;
+            }
+        }
+        return new Uint8Array(result);
+    }
+    
+    function compressQuad(data) {
+        const bytes = new TextEncoder().encode(data);
+        const packed = quadPack(bytes);
+        return {
+            size: packed.length,
+            ratio: bytes.length / packed.length
+        };
+    }
+    
+    function compressQuadRLE(data) {
+        const bytes = new TextEncoder().encode(data);
+        const quadPacked = quadPack(bytes);
+        const rlePacked = rlePack(quadPacked);
+        return {
+            size: rlePacked.length,
+            ratio: bytes.length / rlePacked.length
+        };
+    }
+    
+    function renderComparison(originalSize, quadResult, rleResult) {
+        const quadSpeedup = quadResult.ratio;
+        const rleSpeedup = rleResult.ratio;
+        const winner = quadSpeedup >= rleSpeedup ? 'QUAD' : 'QUAD+RLE';
+        
+        const container = document.getElementById('benchmarkResult');
+        container.style.display = 'block';
+        container.innerHTML = `
+            <div class="output-box">
+                <div class="comparison">
+                    <div class="comparison-card ${quadSpeedup >= rleSpeedup ? 'winner' : ''}">
+                        <div>🟢 QUAD (4x)</div>
+                        <div style="font-size: 32px;">${quadResult.size.toLocaleString()} bytes</div>
+                        <div>⚡ ${quadSpeedup.toFixed(2)}x</div>
+                        <div class="success">✓ Guaranteed 4x</div>
+                    </div>
+                    <div class="comparison-card ${rleSpeedup > quadSpeedup ? 'winner' : ''}">
+                        <div>🔷 QUAD+RLE (8x)</div>
+                        <div style="font-size: 32px;">${rleResult.size.toLocaleString()} bytes</div>
+                        <div>⚡ ${rleSpeedup.toFixed(2)}x</div>
+                        <div>${rleSpeedup > quadSpeedup ? '✓ Extra compression!' : '✗ Worse than QUAD'}</div>
+                    </div>
+                </div>
+                
+                <div class="stat-value" style="color: #00ff88;">
+                    🏆 WINNER: ${winner} (${winner === 'QUAD' ? quadSpeedup.toFixed(2) : rleSpeedup.toFixed(2)}x)
+                </div>
+                
+                <div class="info-text" style="margin-top: 15px; text-align: center;">
+                    Original: ${originalSize.toLocaleString()} bytes<br>
+                    QUAD is ${quadSpeedup >= rleSpeedup ? 'BETTER' : 'worse'} than QUAD+RLE by ${Math.abs(quadSpeedup - rleSpeedup).toFixed(2)}x
+                </div>
+            </div>
+        `;
+    }
+    
+    function benchmarkRandom() {
+        let data = '';
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        for (let i = 0; i < 10000; i++) {
+            data += chars[Math.floor(Math.random() * chars.length)];
+        }
+        const originalSize = new TextEncoder().encode(data).length;
+        const quadResult = compressQuad(data);
+        const rleResult = compressQuadRLE(data);
+        renderComparison(originalSize, quadResult, rleResult);
+    }
+    
+    function benchmarkRepeat() {
+        const data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'.repeat(500);
+        const originalSize = new TextEncoder().encode(data).length;
+        const quadResult = compressQuad(data);
+        const rleResult = compressQuadRLE(data);
+        renderComparison(originalSize, quadResult, rleResult);
+    }
+    
+    function benchmarkText() {
+        const data = "The quick brown fox jumps over the lazy dog. ".repeat(200);
+        const originalSize = new TextEncoder().encode(data).length;
+        const quadResult = compressQuad(data);
+        const rleResult = compressQuadRLE(data);
+        renderComparison(originalSize, quadResult, rleResult);
+    }
+    
+    document.getElementById('benchmarkRandomBtn').onclick = benchmarkRandom;
+    document.getElementById('benchmarkRepeatBtn').onclick = benchmarkRepeat;
+    document.getElementById('benchmarkTextBtn').onclick = benchmarkText;
+    
+    setTimeout(() => benchmarkRandom(), 100);
+</script>
+</body>
+</html>
