@@ -138,7 +138,7 @@ console.log(`QUAD saves: ${stats.quad.savings}`);
 console.log(`QUAD+RLE saves: ${stats.quadRle.savings}`);
 console.log(`Best: ${stats.bestMethod}`);
 
-📊 Method Comparison
-Data Type	QUAD	QU
+Author: P. Bobkin
+Github: kookid90
 
 
