@@ -1,0 +1,28 @@
+{
+  "name": "eightdamage",
+  "version": "1.0.0",
+  "description": "QUAD (4x guaranteed) + RLE compression · Lossless · Zero dependencies",
+  "main": "eightdamage.js",
+  "scripts": {
+    "test": "node test.js",
+    "benchmark": "node benchmark.js"
+  },
+  "keywords": [
+    "compression",
+    "lossless",
+    "quad",
+    "rle",
+    "eightdamage",
+    "algorithm",
+    "data-compression"
+  ],
+  "author": "Petrovich",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petrovich/eightdamage"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}
