@@ -13,14 +13,20 @@ EIGHTDAMAGE is a lightweight, lossless compression algorithm that works in two s
     RLE (optional 2x) – adds run-length encoding for extra compression on repetitive data
 
 Result: Guaranteed 4x compression on ANY data. Up to 500x+ on repetitive patterns.
-
+---------------------------------------------------------------------------------
 💪 WHERE TO USE
 Use Case	Benefit
+
 Databases	Logs compress 100x+ — store months of data in same space
+
 API	Responses 4x smaller — faster loading, less bandwidth
+
 Cache	4x more data fits in same memory (Redis, Memcached)
+
 Network	Transfer 4x faster — same data, 1/4 the time
+
 Storage	Files take 75% less space
+
 Backups	Backup 4x more data in same time
 
 ## 🚀 Quick Start
