@@ -22,12 +22,10 @@ Result: Guaranteed 4x compression on ANY data. Up to 500x+ on repetitive pattern
 npm install eightdamage
 
 Or include directly in browser
-html
 
 <script src="eightdamage.js"></script>
 
 Basic Usage
-javascript
 
 const EightDamage = require('eightdamage');
 
